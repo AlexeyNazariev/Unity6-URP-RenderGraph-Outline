@@ -26,26 +26,16 @@ Shader "Custom/HardOutline"
             float _Thickness;
 
             half4 Frag(Varyings input) : SV_Target {
-                float2 uv = input.texcoord; 
+                float2 uv = input.texcoord;
 
                 half centerAlpha = SAMPLE_TEXTURE2D_X(_OutlineRenderTexture, sampler_OutlineRenderTexture, uv).a;
 
-                // Базовый размер одного пикселя
                 float2 texelSize = float2(1.0 / _ScreenParams.x, 1.0 / _ScreenParams.y);
-                
-                // --- НОВАЯ ЛОГИКА МАСШТАБИРОВАНИЯ ---
-                // Задаем эталонную высоту экрана (например, Full HD = 1080)
                 float referenceHeight = 1080.0;
-                
-                // Вычисляем коэффициент. Для 1080p он будет = 1. Для 4K (2160) = 2. Для 720p = ~0.66
                 float scaleFactor = _ScreenParams.y / referenceHeight;
-                
-                // Итоговая толщина теперь автоматически подстраивается под экран
                 float scaledThickness = _Thickness * scaleFactor;
                 float2 offset = texelSize * scaledThickness;
-                // ------------------------------------
 
-                // Проверяем 8 соседей для идеальных углов
                 half up = SAMPLE_TEXTURE2D_X(_OutlineRenderTexture, sampler_OutlineRenderTexture, uv + float2(0, offset.y)).a;
                 half down = SAMPLE_TEXTURE2D_X(_OutlineRenderTexture, sampler_OutlineRenderTexture, uv + float2(0, -offset.y)).a;
                 half left = SAMPLE_TEXTURE2D_X(_OutlineRenderTexture, sampler_OutlineRenderTexture, uv + float2(-offset.x, 0)).a;
@@ -56,12 +46,10 @@ Shader "Custom/HardOutline"
                 half bottomLeft = SAMPLE_TEXTURE2D_X(_OutlineRenderTexture, sampler_OutlineRenderTexture, uv + float2(-offset.x, -offset.y)).a;
                 half bottomRight = SAMPLE_TEXTURE2D_X(_OutlineRenderTexture, sampler_OutlineRenderTexture, uv + float2(offset.x, -offset.y)).a;
 
-                // Выращиваем маску (Dilation)
                 half maxNeighbors = max(max(up, down), max(left, right));
                 half maxDiagonals = max(max(topLeft, topRight), max(bottomLeft, bottomRight));
                 half dilated = max(centerAlpha, max(maxNeighbors, maxDiagonals));
 
-                // Вычитаем исходник, чтобы получить границу
                 half edge = saturate(dilated - centerAlpha);
 
                 return half4(_OutlineColor.rgb, edge * _OutlineColor.a);

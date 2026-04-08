@@ -29,7 +29,6 @@ Shader "Hidden/OutlineSilhouette"
             }
 
             half4 Frag(Varyings input) : SV_Target {
-                // Рисуем силуэт абсолютно белым цветом (альфа = 1)
                 return half4(1, 1, 1, 1);
             }
             ENDHLSL
